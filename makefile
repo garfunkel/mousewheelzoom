@@ -1,4 +1,4 @@
-FLAGS=-Wall -std=gnu11
+FLAGS=-Wall -std=gnu99
 OPTIMISATIONS=-O3 -flto
 CFLAGS=`pkg-config --cflags gio-2.0 x11`
 LIBS=`pkg-config --libs gio-2.0 x11`
