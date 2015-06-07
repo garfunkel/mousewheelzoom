@@ -1,0 +1,10 @@
+language: c
+
+compiler:
+  - gcc
+
+install:
+  - sudo apt-get install libx11-dev
+  - sudo apt-get install libglib2.0-dev
+
+script: make
