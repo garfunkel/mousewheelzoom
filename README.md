@@ -11,7 +11,7 @@ This program is based on tobiasquinn's excellent gnome-shell-mousewheel-zoom gno
 * libglib2.0-dev
 
 ## Building
-1. make
+`make`
 
 ## Start
-1. ./mousewheelzoom
+`./mousewheelzoom`
