@@ -1,4 +1,4 @@
-WARNINGS=-Wall
+FLAGS=-Wall -std=gnu11
 OPTIMISATIONS=-O3 -flto
 CFLAGS=`pkg-config --cflags gio-2.0 x11`
 LIBS=`pkg-config --libs gio-2.0 x11`
@@ -7,10 +7,10 @@ OBJECT=mousewheelzoom.o
 TARGET=mousewheelzoom
 
 $(TARGET): $(OBJECT)
-	$(CC) $(WARNINGS) $(OPTIMISATIONS) -s -o $(TARGET) $(OBJECT) $(LIBS)
+	$(CC) $(FLAGS) $(OPTIMISATIONS) -s -o $(TARGET) $(OBJECT) $(LIBS)
 
 $(OBJECT): $(SOURCE)
-	$(CC) $(WARNINGS) $(OPTIMISATIONS) -c -o $(OBJECT) $(SOURCE) $(CFLAGS)
+	$(CC) $(FLAGS) $(OPTIMISATIONS) -c -o $(OBJECT) $(SOURCE) $(CFLAGS)
 
 all: $(TARGET)
 
