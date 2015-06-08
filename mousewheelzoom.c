@@ -1,4 +1,5 @@
 #define XK_MISCELLANY
+#define XK_XKB_KEYS
 
 
 #include <time.h>
@@ -16,18 +17,24 @@
 #define DBUS_METHOD_GET_MAG_FACTOR "getMagFactor"						// DBus getMagFactor() method
 #define DBUS_METHOD_SET_MAG_FACTOR "setMagFactor"						// DBUS setMagFactor() method
 
-#define ZOOM_INCREMENT 1.06		// zoom increment
-#define ZOOM_ITERATIONS 4		// number of zoom iterations
-#define ZOOM_FACTOR_MIN 1		// minimum zoom factor
-#define ZOOM_FACTOR_MAX 32		// maximum zoom factor
-#define ZOOM_MODIFIER Mod1Mask	// alt modifier
-#define ZOOM_IN XK_KP_Add		// keypad add
-#define ZOOM_OUT XK_KP_Subtract	// keypad subtract
+#define ZOOM_INCREMENT 1.06					// zoom increment
+#define ZOOM_ITERATIONS 4					// number of zoom iterations
+#define ZOOM_FACTOR_MIN 1					// minimum zoom factor
+#define ZOOM_FACTOR_MAX 32					// maximum zoom factor
+#define ZOOM_MODIFIER Mod1Mask				// alt modifier
+#define ZOOM_IN_MOUSE Button4				// mouse scroll up
+#define ZOOM_OUT_MOUSE Button5				// mouse scroll down
+#define ZOOM_IN_KB XK_KP_Add				// keypad add
+#define ZOOM_OUT_KB XK_KP_Subtract			// keypad subtract
 
 
 static const KeySym ZOOM_KEYS[] = {
-	ZOOM_IN,	// zoom in key
-	ZOOM_OUT	// zoom out key
+	ZOOM_IN_KB,		// zoom in using keyboard
+	ZOOM_OUT_KB		// zoom out using keyboard
+};
+static const KeySym ZOOM_BUTTONS[] = {
+	ZOOM_IN_MOUSE,	// zoom in using mouse
+	ZOOM_OUT_MOUSE,	// zoom out using mouse
 };
 static const Mask MASKS[] = {
 	NoSymbol,			// no modifiers
@@ -141,8 +148,8 @@ static void on_name_appeared(
 
 	gdouble magFactor = get_mag_factor(connection);
 
-	for (int zoomKeyIndex = 0; zoomKeyIndex < sizeof(ZOOM_KEYS) / sizeof(ZOOM_KEYS[0]); zoomKeyIndex++) {
-		for (int maskIndex = 0; maskIndex < sizeof(MASKS) / sizeof(MASKS[0]); maskIndex++) {
+	for (int maskIndex = 0; maskIndex < sizeof(MASKS) / sizeof(MASKS[0]); maskIndex++) {
+		for (int zoomKeyIndex = 0; zoomKeyIndex < sizeof(ZOOM_KEYS) / sizeof(ZOOM_KEYS[0]); zoomKeyIndex++) {
 			XGrabKey(
 				display,
 				XKeysymToKeycode(display, ZOOM_KEYS[zoomKeyIndex]),
@@ -153,6 +160,21 @@ static void on_name_appeared(
 				GrabModeAsync
 			);
 		}
+
+		for (int zoomButtonIndex = 0; zoomButtonIndex < sizeof(ZOOM_BUTTONS) / sizeof(ZOOM_BUTTONS[0]); zoomButtonIndex++) {
+			XGrabButton(
+				display,
+				ZOOM_BUTTONS[zoomButtonIndex],
+				ZOOM_MODIFIER | MASKS[maskIndex],
+				DefaultRootWindow(display),
+				FALSE,
+				0,
+				GrabModeAsync,
+				GrabModeAsync,
+				None,
+				None
+			);
+		}
 	}
 
 	XEvent event;
@@ -161,18 +183,18 @@ static void on_name_appeared(
 	while (TRUE) {
 		XNextEvent(display, &event);
 
-		if (event.xkey.type == KeyPress) {
+		if (event.type == KeyPress || event.type == ButtonPress) {
 			for (int iteration = 0; iteration < ZOOM_ITERATIONS; iteration++) {
 				keySym = XLookupKeysym(&event.xkey, 0);
 
-				if (keySym == XK_KP_Subtract) {
+				if (event.xbutton.button == ZOOM_OUT_MOUSE || keySym == ZOOM_OUT_KB) {
 					if (magFactor <= ZOOM_FACTOR_MIN) {
 						break;
 					}
 
 					magFactor *= 1 / ZOOM_INCREMENT;
 					magFactor = magFactor < ZOOM_FACTOR_MIN ? ZOOM_FACTOR_MIN : magFactor;
-				} else if (keySym == XK_KP_Add) {
+				} else if (event.xbutton.button == ZOOM_IN_MOUSE || keySym == ZOOM_IN_KB) {
 					if (magFactor >= ZOOM_FACTOR_MAX) {
 						break;
 					}
@@ -180,7 +202,7 @@ static void on_name_appeared(
 					magFactor *= ZOOM_INCREMENT / 1;
 					magFactor = magFactor > ZOOM_FACTOR_MAX ? ZOOM_FACTOR_MAX : magFactor;
 				} else {
-					g_warning("XLookupKeysym(): unexpected keysym %lu", keySym);
+					g_warning("XLookupKeysym(): unexpected button/keysym %i%lu", event.xbutton.button, keySym);
 				}
 
 				set_mag_factor(connection, magFactor);
