@@ -15,3 +15,7 @@ This program is based on tobiasquinn's excellent gnome-shell-mousewheel-zoom gno
 
 ## Start
 `./mousewheelzoom`
+
+## Usage
+* Zoom in: `alt++` or `alt+scroll-up`
+* Zoom out: `alt+-` or `alt+scroll-down`
