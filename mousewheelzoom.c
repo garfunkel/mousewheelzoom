@@ -1,3 +1,4 @@
+#define XK_LATIN1
 #define XK_MISCELLANY
 #define XK_XKB_KEYS
 
@@ -17,20 +18,24 @@
 #define DBUS_METHOD_GET_MAG_FACTOR "getMagFactor"						// DBus getMagFactor() method
 #define DBUS_METHOD_SET_MAG_FACTOR "setMagFactor"						// DBUS setMagFactor() method
 
-#define ZOOM_INCREMENT 1.06					// zoom increment
-#define ZOOM_ITERATIONS 4					// number of zoom iterations
-#define ZOOM_FACTOR_MIN 1					// minimum zoom factor
-#define ZOOM_FACTOR_MAX 32					// maximum zoom factor
-#define ZOOM_MODIFIER Mod1Mask				// alt modifier
-#define ZOOM_IN_MOUSE Button4				// mouse scroll up
-#define ZOOM_OUT_MOUSE Button5				// mouse scroll down
-#define ZOOM_IN_KB XK_KP_Add				// keypad add
-#define ZOOM_OUT_KB XK_KP_Subtract			// keypad subtract
+#define ZOOM_INCREMENT 1.06				// zoom increment
+#define ZOOM_ITERATIONS 4				// number of zoom iterations
+#define ZOOM_FACTOR_MIN 1				// minimum zoom factor
+#define ZOOM_FACTOR_MAX 32				// maximum zoom factor
+#define ZOOM_MODIFIER Mod1Mask			// alt modifier
+#define ZOOM_IN_MOUSE Button4			// mouse scroll up
+#define ZOOM_OUT_MOUSE Button5			// mouse scroll down
+#define ZOOM_IN_KEYBOARD XK_equal		// keyboard equal (also plus)
+#define ZOOM_OUT_KEYBOARD XK_minus		// keyboard minus
+#define ZOOM_IN_NUMPAD XK_KP_Add		// numpad add
+#define ZOOM_OUT_NUMPAD XK_KP_Subtract	// numpad subtract
 
 
 static const KeySym ZOOM_KEYS[] = {
-	ZOOM_IN_KB,		// zoom in using keyboard
-	ZOOM_OUT_KB		// zoom out using keyboard
+	ZOOM_IN_KEYBOARD,	// zoom in using keyboard
+	ZOOM_OUT_KEYBOARD,	// zoom out using keyboard
+	ZOOM_IN_NUMPAD,		// zoom in using numpad
+	ZOOM_OUT_NUMPAD		// zoom out using numpad
 };
 static const KeySym ZOOM_BUTTONS[] = {
 	ZOOM_IN_MOUSE,	// zoom in using mouse
@@ -187,14 +192,18 @@ static void on_name_appeared(
 			for (int iteration = 0; iteration < ZOOM_ITERATIONS; iteration++) {
 				keySym = XLookupKeysym(&event.xkey, 0);
 
-				if (event.xbutton.button == ZOOM_OUT_MOUSE || keySym == ZOOM_OUT_KB) {
+				if (event.xbutton.button == ZOOM_OUT_MOUSE
+						|| keySym == ZOOM_OUT_KEYBOARD
+						|| keySym == ZOOM_OUT_NUMPAD) {
 					if (magFactor <= ZOOM_FACTOR_MIN) {
 						break;
 					}
 
 					magFactor *= 1 / ZOOM_INCREMENT;
 					magFactor = magFactor < ZOOM_FACTOR_MIN ? ZOOM_FACTOR_MIN : magFactor;
-				} else if (event.xbutton.button == ZOOM_IN_MOUSE || keySym == ZOOM_IN_KB) {
+				} else if (event.xbutton.button == ZOOM_IN_MOUSE
+						|| keySym == ZOOM_IN_KEYBOARD
+						|| keySym == ZOOM_IN_NUMPAD) {
 					if (magFactor >= ZOOM_FACTOR_MAX) {
 						break;
 					}
@@ -202,7 +211,7 @@ static void on_name_appeared(
 					magFactor *= ZOOM_INCREMENT / 1;
 					magFactor = magFactor > ZOOM_FACTOR_MAX ? ZOOM_FACTOR_MAX : magFactor;
 				} else {
-					g_warning("XLookupKeysym(): unexpected button/keysym %i%lu", event.xbutton.button, keySym);
+					g_warning("XLookupKeysym(): unexpected button/keysym %i/%lu", event.xbutton.button, keySym);
 				}
 
 				set_mag_factor(connection, magFactor);
