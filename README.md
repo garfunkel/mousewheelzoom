@@ -15,8 +15,10 @@ This program is based on tobiasquinn's excellent gnome-shell-mousewheel-zoom gno
 `make`
 
 ## Install
-`sudo cp mousewheelzoom.desktop /etc/xdg/autostart/`
-`sudo cp mousewheelzoom /usr/local/bin/`
+```
+sudo cp mousewheelzoom.desktop /etc/xdg/autostart/
+sudo cp mousewheelzoom /usr/local/bin/
+```
 
 ## Start
 `/usr/local/bin/mousewheelzoom`
