@@ -11,11 +11,15 @@ This program is based on tobiasquinn's excellent gnome-shell-mousewheel-zoom gno
 * libx11-dev
 * libglib2.0-dev
 
-## Building
+## Build
 `make`
 
+## Install
+`sudo cp mousewheelzoom.desktop /etc/xdg/autostart/`
+`sudo cp mousewheelzoom /usr/local/bin/`
+
 ## Start
-`./mousewheelzoom`
+`/usr/local/bin/mousewheelzoom`
 
 ## Usage
 * Zoom in: `Alt++` or `Alt+Scroll Up`
