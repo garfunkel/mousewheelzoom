@@ -12,7 +12,11 @@
 #include <X11/keysymdef.h>
 
 
-#define DBUS_NAME_MAGNIFIER "org.gnome.Magnifier"						// DBus magnifier name
+#define DBUS_NAME_MAGNIFIER "org.gnome.Magnifier"		// DBus magnifier name
+#define DBUS_PATH_MAGNIFIER "/org/gnome/Magnifier"		// DBus path to magnifier
+#define DBUS_INTERFACE_MAGNIFIER "org.gnome.Magnifier"	// DBus interface for magnifier
+#define DBUS_METHOD_GET_ZOOM_REGIONS "getZoomRegions"	// DBus getZoomRegions() method
+
 #define DBUS_PATH_ZOOMER_0 "/org/gnome/Magnifier/ZoomRegion/zoomer0"	// DBus path to zoomer
 #define DBUS_INTERFACE_ZOOM_REGION "org.gnome.Magnifier.ZoomRegion"		// DBus interface for zoom region
 #define DBUS_METHOD_GET_MAG_FACTOR "getMagFactor"						// DBus getMagFactor() method
@@ -30,6 +34,7 @@
 #define ZOOM_IN_NUMPAD XK_KP_Add		// numpad add
 #define ZOOM_OUT_NUMPAD XK_KP_Subtract	// numpad subtract
 
+#define DEBUG_DBUS_MESSAGE_INDENT 4
 
 static const KeySym ZOOM_KEYS[] = {
 	ZOOM_IN_KEYBOARD,	// zoom in using keyboard
@@ -53,6 +58,52 @@ static const struct timespec ZOOM_ITERATION_DELAY = {
 };
 
 
+/* Expose ZoomRegion interface so that we can call the contained methods. */
+static void expose_zoom_region_interface(GDBusConnection *connection) {
+	GDBusMessage *request = g_dbus_message_new_method_call(
+		DBUS_NAME_MAGNIFIER,
+		DBUS_PATH_MAGNIFIER,
+		DBUS_INTERFACE_MAGNIFIER,
+		DBUS_METHOD_GET_ZOOM_REGIONS
+	);
+
+	g_debug(
+		"DBus %s() request message: \n%s",
+		DBUS_METHOD_GET_ZOOM_REGIONS,
+		g_dbus_message_print(request, DEBUG_DBUS_MESSAGE_INDENT)
+	);
+
+	GError *error = NULL;
+
+	GDBusMessage *reply = g_dbus_connection_send_message_with_reply_sync(
+		connection,
+		request,
+		G_DBUS_SEND_MESSAGE_FLAGS_NONE,
+		-1,
+		NULL,
+		NULL,
+		&error
+	);
+
+	g_object_unref(request);
+
+	if (error) {
+		g_error(
+			"unable to expose %s interface: %s",
+			DBUS_INTERFACE_MAGNIFIER,
+			error->message
+		);
+	}
+
+	g_debug(
+		"DBus %s() reply message: \n%s",
+		DBUS_METHOD_GET_ZOOM_REGIONS,
+		g_dbus_message_print(reply, DEBUG_DBUS_MESSAGE_INDENT)
+	);
+
+	g_object_unref(reply);
+}
+
 /* Get current magnification factor. */
 static gdouble get_mag_factor(GDBusConnection *connection) {
 	GDBusMessage *request = g_dbus_message_new_method_call(
@@ -62,7 +113,11 @@ static gdouble get_mag_factor(GDBusConnection *connection) {
 		DBUS_METHOD_GET_MAG_FACTOR
 	);
 
-	g_debug("DBus %s() request message: \n%s", DBUS_METHOD_GET_MAG_FACTOR, g_dbus_message_print(request, 4));
+	g_debug(
+		"DBus %s() request message: \n%s",
+		DBUS_METHOD_GET_MAG_FACTOR,
+		g_dbus_message_print(request, DEBUG_DBUS_MESSAGE_INDENT)
+	);
 
 	GError *error = NULL;
 
@@ -84,7 +139,11 @@ static gdouble get_mag_factor(GDBusConnection *connection) {
 		g_warning("unable to get current magnification factor: %s", error->message);
 		g_clear_error(&error);
 	} else {
-		g_debug("DBus %s() reply message: \n%s", DBUS_METHOD_GET_MAG_FACTOR, g_dbus_message_print(reply, 4));
+		g_debug(
+			"DBus %s() reply message: \n%s",
+			DBUS_METHOD_GET_MAG_FACTOR,
+			g_dbus_message_print(reply, DEBUG_DBUS_MESSAGE_INDENT)
+		);
 
 		GVariant *body = g_dbus_message_get_body(reply);
 
@@ -111,7 +170,11 @@ static void set_mag_factor(GDBusConnection *connection, gdouble magFactor) {
 
 	g_dbus_message_set_body(request, g_variant_new("(dd)", magFactor, magFactor));
 
-	g_debug("DBus %s() request message: \n%s", DBUS_METHOD_SET_MAG_FACTOR, g_dbus_message_print(request, 4));
+	g_debug(
+		"DBus %s() request message: \n%s",
+		DBUS_METHOD_SET_MAG_FACTOR,
+		g_dbus_message_print(request, DEBUG_DBUS_MESSAGE_INDENT)
+	);
 
 	GError *error = NULL;
 
@@ -131,7 +194,11 @@ static void set_mag_factor(GDBusConnection *connection, gdouble magFactor) {
 		g_warning("unable to set magnification factor: %s", error->message);
 		g_clear_error(&error);
 	} else {
-		g_debug("DBus %s() reply message: \n%s", DBUS_METHOD_SET_MAG_FACTOR, g_dbus_message_print(reply, 4));
+		g_debug(
+			"DBus %s() reply message: \n%s",
+			DBUS_METHOD_SET_MAG_FACTOR,
+			g_dbus_message_print(reply, DEBUG_DBUS_MESSAGE_INDENT)
+		);
 		g_object_unref(reply);
 	}
 }
@@ -150,6 +217,8 @@ static void on_name_appeared(
 	if (!display) {
 		g_error("could not open display");
 	}
+
+	expose_zoom_region_interface(connection);
 
 	gdouble magFactor = get_mag_factor(connection);
 
